@@ -7,7 +7,7 @@ const COOKIE = process.env.COOKIE;
 const ADMIN_ID = process.env.ADMIN_ID;
 let THREAD_ID = process.env.THREAD_ID;
 
-// Load stored thread ID from file (if present)
+// Load saved thread ID if available
 if (fs.existsSync("thread.txt")) {
   THREAD_ID = fs.readFileSync("thread.txt", "utf-8").trim();
 }
@@ -15,36 +15,32 @@ if (fs.existsSync("thread.txt")) {
 login({ userAgent: "Mozilla/5.0", forceLogin: true, listenEvents: true, cookie: COOKIE }, (err, api) => {
   if (err) return console.error("❌ Login failed:", err);
 
-  console.log("✅ Logged in as bot.");
-  
+  console.log("✅ Logged in successfully.");
+
   api.setOptions({ listenEvents: true });
 
-  // Listen for incoming messages to grab thread ID
   api.listenMqtt((err, event) => {
     if (err) return console.error(err);
-    
-    if (!THREAD_ID) {
-      console.log("🔥 First thread ID detected:", event.threadID);
+
+    // Save thread ID if not yet known
+    if (!THREAD_ID && event.threadID) {
       THREAD_ID = event.threadID;
-
-      // Save it to file
       fs.writeFileSync("thread.txt", THREAD_ID);
-
-      // Optional: Send confirmation
-      api.sendMessage("✅ Thread ID saved and bot is now fully active.", THREAD_ID);
+      api.sendMessage("✅ Thread ID saved. Bot is now active.", THREAD_ID);
+      console.log("🔥 First thread ID detected and saved:", THREAD_ID);
     }
 
-    // You can add command handling here if needed
+    // Command handling (optional)
     if (event.body?.toLowerCase() === "ping") {
       api.sendMessage("🏓 Pong!", event.threadID);
     }
   });
 
-  // Schedule a message every hour using saved thread ID
+  // Scheduled message every hour
   if (THREAD_ID) {
     schedule.scheduleJob("0 * * * *", () => {
-      api.sendMessage("⏰ Hourly update from your bot!", THREAD_ID);
-      console.log("📤 Scheduled message sent.");
+      api.sendMessage("⏰ Hourly check-in from your bot!", THREAD_ID);
+      console.log("📤 Sent scheduled message to:", THREAD_ID);
     });
   }
 });
