@@ -1,7 +1,6 @@
 {
   "name": "messenger-bot",
   "version": "1.0.0",
-  "description": "Facebook Messenger Bot using ws3-fca",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
